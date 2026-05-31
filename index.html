@@ -9,14 +9,23 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-body{cursor:default}
-p,h1,h2,h3,h4,h5,h6,span,div,section,header,footer,nav,aside,main,article,li,ul,ol,td,th,label{cursor:default}
-input,textarea{cursor:text}
-select{cursor:default}
-button{cursor:pointer}
-.card,.chip,.voltar,.ab,.com-del,.com-edit,.drop-z,.nav-btn,.sb{cursor:pointer}
-a[href]{cursor:pointer}
-[onclick]{cursor:pointer}
+html,body{cursor:default}
+/* Prevent text cursor on all non-interactive elements */
+p,h1,h2,h3,h4,h5,h6,span,div,section,article,header,footer,nav,aside,main,
+li,ul,ol,td,th,caption,figcaption,blockquote,pre,
+.hero-q,.hero-ref,.sec-titulo,.card-tit,.card-aut,.badge,.det-tit,.det-sub,
+.fi-label,.fi-val,.det-resumo,.assunto-tag,.assunto-tags,.status-txt,
+.com-autor,.com-data,.com-txt,.stat-n,.stat-l,.adm-hdr-nome,
+.hdr-logo-nome,.hdr-logo-sub,.login-box h2,.login-box p,
+.modal h3,.modal-sub,.campo label,.fgi label,.fg-hint,.empty{
+  cursor:default!important;
+  user-select:none
+}
+/* Allow selection only on content text */
+.det-resumo,.com-txt,.fi-val{user-select:text!important}
+input,textarea{cursor:text!important}
+select{cursor:default!important}
+button,.card,.chip,.voltar,.ab,.com-del,.com-edit,.drop-z,.nav-btn,.sb,a[href],[onclick]{cursor:pointer!important}
 
 :root{
   --verde:#0F5C34;--verde-esc:#0A4024;--verde-cl:#2F7D52;--verde-f:#e8f4ee;
@@ -43,15 +52,15 @@ img{display:block;max-width:100%}
 .nav-btn.adm{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.07)}
 
 .hero{background:linear-gradient(155deg,var(--verde-esc) 0%,var(--verde) 55%,var(--verde-cl) 100%);padding:56px 0 48px;text-align:center}
-.hero-q{font-family:var(--serif);font-size:clamp(1.1rem,3vw,1.55rem);color:#fff;font-style:italic;max-width:600px;margin:0 auto 6px;line-height:1.65}
-.hero-ref{color:rgba(255,255,255,.5);font-size:.78rem;margin-bottom:30px;letter-spacing:.05em}
+.hero-q{font-family:var(--serif);font-size:clamp(1.1rem,3vw,1.55rem);color:#fff;font-style:italic;max-width:600px;margin:0 auto 6px;line-height:1.65;user-select:none}
+.hero-ref{color:rgba(255,255,255,.5);font-size:.78rem;margin-bottom:30px;letter-spacing:.05em;user-select:none}
 .busca-wrap{display:flex;max-width:540px;margin:0 auto;background:#fff;border-radius:50px;box-shadow:0 4px 24px rgba(0,0,0,.18);overflow:hidden}
 .busca-wrap input{flex:1;padding:13px 20px;border:none;outline:none;font-size:.9rem;font-family:var(--sans);font-weight:300;min-width:0}
 .busca-wrap button{background:var(--verde);color:#fff;border:none;padding:13px 26px;font-size:.75rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;transition:background .18s}
 .busca-wrap button:hover{background:var(--verde-esc)}
 
 .sec{padding:48px 0}.sec-alt{background:var(--branco)}
-.sec-titulo{font-family:var(--serif);font-size:1.2rem;color:var(--verde-esc);margin-bottom:24px;font-weight:600;padding-bottom:10px;border-bottom:1px solid var(--borda)}
+.sec-titulo{font-family:var(--serif);font-size:1.2rem;color:var(--verde-esc);margin-bottom:24px;font-weight:600;padding-bottom:10px;border-bottom:1px solid var(--borda);user-select:none}
 
 .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
 .card{background:var(--branco);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--borda);transition:transform .18s,box-shadow .18s}
@@ -473,7 +482,7 @@ const API='https://script.google.com/macros/s/AKfycbw1ClBtm2xfzzw3lGC52EjauoiQgb
 const _SK=btoa([49,51,49,49,53,52].map((c,i)=>(c^[7,3,9,2,5,8][i%6])+'').join(','));
 function _chk(s){try{const d=atob(_SK).split(',').map(Number);return s===d.map((c,i)=>(c^[7,3,9,2,5,8][i%6])).map(c=>String.fromCharCode(c)).join('')}catch{return false}}
 
-let LIVROS=[],livroAtual=null,vistaAnt='inicio',assuntosLista=[];
+let LIVROS=[],livroAtual=null,vistaAnt='inicio',assuntosLista=[],_CACHE={};
 
 async function apiGet(acao,params=''){const r=await fetch(`${API}?acao=${acao}${params}`);return r.json();}
 async function apiPost(body){const r=await fetch(API,{method:'POST',body:JSON.stringify(body)});return r.json();}
@@ -535,6 +544,9 @@ async function carregarDados(){
   LIVROS=await apiGet('livros');
   assuntosLista=getAssuntosFromLivros();
   renderInicio();
+  // warm cache
+  Promise.all([apiGet('emprestimos'),apiGet('solicitacoes')]).then(([e,s])=>{_CACHE.emps=e;_CACHE.sols=s;});
+  Promise.all([apiGet('emprestimos'),apiGet('solicitacoes')]).then(([e,s])=>{_CACHE.emps=e;_CACHE.sols=s;});
   const sel=document.getElementById('f-ass');
   while(sel.options.length>1)sel.remove(1);
   assuntosLista.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o);});
@@ -680,7 +692,7 @@ function secAdm(id){
 
 // DASHBOARD
 async function renderDash(){
-  const[emps,sols]=await Promise.all([apiGet('emprestimos'),apiGet('solicitacoes')]);
+  const[emps,sols]=await Promise.all([_CACHE.emps?Promise.resolve(_CACHE.emps):apiGet('emprestimos'),_CACHE.sols?Promise.resolve(_CACHE.sols):apiGet('solicitacoes')]);_CACHE.emps=emps;_CACHE.sols=sols;
   const ativos=emps.filter(e=>String(e.DEVOLVIDO||'')!='SIM');
   const atrs=ativos.filter(atrasado);
   const pend=sols.filter(s=>s.STATUS==='PENDENTE');
@@ -698,25 +710,25 @@ async function renderDash(){
 // SOLICITAÇÕES
 async function renderSols(){
   document.getElementById('tw-sol').innerHTML='<p class="empty">Carregando...</p>';
-  const sols=await apiGet('solicitacoes');
+  const sols=_CACHE.sols||await apiGet('solicitacoes');_CACHE.sols=sols;
   const pend=sols.filter(s=>s.STATUS==='PENDENTE');
   const tw=document.getElementById('tw-sol');
   if(!pend.length){tw.innerHTML='<p class="empty">Nenhuma solicitação pendente.</p>';return;}
   tw.innerHTML=`<table><thead><tr><th>Data</th><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead><tbody>${pend.map(s=>`<tr><td>${fmtDate(s.DATA)}</td><td>${s.NOME}</td><td><a href="https://wa.me/55${(s.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${s.WHATSAPP}</a></td><td>${s.TITULO||''}</td><td>${s.TIPO==='fila'?'Fila':'Empréstimo'}</td><td>${s.TIPO!=='fila'?`<button class="ab ab-v" onclick="aprovarSol(${s.ID})">Aprovar</button>`:''} <button class="ab ab-r" onclick="rejeitarSol(${s.ID})">Rejeitar</button></td></tr>`).join('')}</tbody></table>`;
 }
-async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
-async function rejeitarSol(id){await apiPost({acao:'rejeitarSol',id});al('Rejeitado.','av','al-adm');renderSols();}
+async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');_CACHE.sols=null;_CACHE.emps=null;al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
+async function rejeitarSol(id){await apiPost({acao:'rejeitarSol',id});_CACHE.sols=null;al('Rejeitado.','av','al-adm');renderSols();}
 
 // EMPRÉSTIMOS
 async function renderEmps(){
   document.getElementById('tw-emp').innerHTML='<p class="empty">Carregando...</p>';
-  const emps=await apiGet('emprestimos');
+  const emps=_CACHE.emps||await apiGet('emprestimos');_CACHE.emps=emps;
   const ativos=emps.filter(e=>String(e.DEVOLVIDO||'')!='SIM');
   const tw=document.getElementById('tw-emp');
   if(!ativos.length){tw.innerHTML='<p class="empty">Nenhum empréstimo ativo.</p>';return;}
   tw.innerHTML=`<table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Emprestado</th><th>Previsto</th><th>Status</th><th>Ação</th></tr></thead><tbody>${ativos.map(e=>`<tr><td>${e.NOME}</td><td><a href="https://wa.me/55${(e.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${e.WHATSAPP}</a></td><td>${e.TITULO||''}</td><td>${fmtDate(e.DATA_EMP)}</td><td>${fmtDate(e.DATA_DEV)}</td><td>${atrasado(e)?'<span style="color:var(--red);font-weight:500">Atrasado</span>':'<span style="color:#10b981;font-weight:500">Em dia</span>'}</td><td><button class="ab ab-v" onclick="devolverAdm(${e.ID})">Devolvido</button></td></tr>`).join('')}</tbody></table>`;
 }
-async function devolverAdm(id){await apiPost({acao:'devolverEmp',id});LIVROS=await apiGet('livros');al('Devolução registrada.','ok','al-adm');renderEmps();renderDash();}
+async function devolverAdm(id){await apiPost({acao:'devolverEmp',id});LIVROS=await apiGet('livros');_CACHE.emps=null;al('Devolução registrada.','ok','al-adm');renderEmps();renderDash();}
 
 // ACERVO ADMIN
 function renderAcervoAdm(){
