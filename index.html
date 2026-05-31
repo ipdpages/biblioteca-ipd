@@ -521,7 +521,7 @@ function confirmar(msg,cb){
 function driveUrl(u){if(!u)return'';const m=u.match(/\/d\/([\w-]+)/);if(m)return`https://drive.google.com/thumbnail?id=${m[1]}&sz=w400`;return u;}
 function capHtml(l){const u=driveUrl(l.capa||l.foto||'');if(u)return`<img src="${u}" alt="Capa" loading="lazy" onerror="this.style.display='none'"/>`;return`<div class="card-ini">${(l.titulo||'?').charAt(0).toUpperCase()}</div>`;}
 function badge(s){return s==='disponivel'?'<span class="badge b-disp">Disponível</span>':'<span class="badge b-emp">Emprestado</span>';}
-function fmtDate(s){if(!s)return'—';const str=String(s).slice(0,10);const[y,m,d]=str.split('-');return d&&m?`${d}/${m}/${y}`:str;}
+function fmtDate(s){if(!s)return'—';try{const str=String(s).slice(0,10);const[y,m,d]=str.split('-');return(d&&m&&y)?`${d}/${m}/${y}`:str;}catch(e){return String(s);}}
 function atrasado(e){if(String(e.DEVOLVIDO||'')=='SIM')return false;return new Date(String(e.DATA_DEV).slice(0,10))<new Date();}
 function al(msg,tipo,elId){const el=document.getElementById(elId);if(!el)return;el.innerHTML=`<div class="al al-${tipo}">${msg}</div>`;setTimeout(()=>el.innerHTML='',4500);}
 function renderGrade(id,lista){
@@ -720,10 +720,10 @@ async function renderSols(){try{
   let sols=_CACHE.sols;
   if(!Array.isArray(sols)){sols=await apiGet('solicitacoes');}
   _CACHE.sols=Array.isArray(sols)?sols:[];
-  const pend=_CACHE.sols.filter(s=>s.STATUS==='PENDENTE');
+  const pend=_CACHE.sols.filter(s=>String(s.STATUS||'').trim()==='PENDENTE');
   const tw=document.getElementById('tw-sol');
   if(!pend.length){tw.innerHTML='<p class="empty">Nenhuma solicitação pendente.</p>';return;}
-  tw.innerHTML=`<table><thead><tr><th>Data</th><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead><tbody>${pend.map(s=>`<tr><td>${fmtDate(s.DATA)}</td><td>${s.NOME}</td><td><a href="https://wa.me/55${(s.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${s.WHATSAPP}</a></td><td>${s.TITULO||''}</td><td>${s.TIPO==='fila'?'Fila':'Empréstimo'}</td><td>${s.TIPO!=='fila'?`<button class="ab ab-v" onclick="aprovarSol(${s.ID})">Aprovar</button>`:''} <button class="ab ab-r" onclick="rejeitarSol(${s.ID})">Rejeitar</button></td></tr>`).join('')}</tbody></table>`;
+  tw.innerHTML=`<table><thead><tr><th>Data</th><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead><tbody>${pend.map(s=>`<tr><td>${fmtDate(s.DATA)}</td><td>${s.NOME}</td><td><a href="https://wa.me/55${String(s.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${s.WHATSAPP}</a></td><td>${s.TITULO||''}</td><td>${s.TIPO==='fila'?'Fila':'Empréstimo'}</td><td>${s.TIPO!=='fila'?`<button class="ab ab-v" onclick="aprovarSol(${s.ID})">Aprovar</button>`:''} <button class="ab ab-r" onclick="rejeitarSol(${s.ID})">Rejeitar</button></td></tr>`).join('')}</tbody></table>`;
 }catch(err){document.getElementById('tw-sol').innerHTML='<p class="empty">Erro ao carregar solicitações.</p>';console.error('renderSols error:',err);}
 }async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');_CACHE.sols=null;_CACHE.emps=null;al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
 async function rejeitarSol(id){await apiPost({acao:'rejeitarSol',id});_CACHE.sols=null;al('Rejeitado.','av','al-adm');renderSols();}
@@ -737,7 +737,7 @@ async function renderEmps(){
   const ativos=_CACHE.emps.filter(e=>String(e.DEVOLVIDO||'')!='SIM');
   const tw=document.getElementById('tw-emp');
   if(!ativos.length){tw.innerHTML='<p class="empty">Nenhum empréstimo ativo.</p>';return;}
-  tw.innerHTML=`<table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Emprestado</th><th>Previsto</th><th>Status</th><th>Ação</th></tr></thead><tbody>${ativos.map(e=>`<tr><td>${e.NOME}</td><td><a href="https://wa.me/55${(e.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${e.WHATSAPP}</a></td><td>${e.TITULO||''}</td><td>${fmtDate(e.DATA_EMP)}</td><td>${fmtDate(e.DATA_DEV)}</td><td>${atrasado(e)?'<span style="color:var(--red);font-weight:500">Atrasado</span>':'<span style="color:#10b981;font-weight:500">Em dia</span>'}</td><td><button class="ab ab-v" onclick="devolverAdm(${e.ID})">Devolvido</button></td></tr>`).join('')}</tbody></table>`;
+  tw.innerHTML=`<table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Emprestado</th><th>Previsto</th><th>Status</th><th>Ação</th></tr></thead><tbody>${ativos.map(e=>`<tr><td>${e.NOME}</td><td><a href="https://wa.me/55${String(e.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${e.WHATSAPP}</a></td><td>${e.TITULO||''}</td><td>${fmtDate(e.DATA_EMP)}</td><td>${fmtDate(e.DATA_DEV)}</td><td>${atrasado(e)?'<span style="color:var(--red);font-weight:500">Atrasado</span>':'<span style="color:#10b981;font-weight:500">Em dia</span>'}</td><td><button class="ab ab-v" onclick="devolverAdm(${e.ID})">Devolvido</button></td></tr>`).join('')}</tbody></table>`;
 }
 async function devolverAdm(id){await apiPost({acao:'devolverEmp',id});LIVROS=await apiGet('livros');_CACHE.emps=null;al('Devolução registrada.','ok','al-adm');renderEmps();renderDash();}
 
@@ -874,6 +874,5 @@ async function confirmarImport(){
   importData=[];document.getElementById('import-preview').innerHTML='';document.getElementById('drop-input').value='';
 }
 </script>
-</body>
 </body>
 </html>
