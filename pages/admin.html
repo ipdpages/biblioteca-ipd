@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Admin – Biblioteca IPD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+  <header class="header">
+    <div class="container header-inner">
+      <div class="logo-area">
+        <div class="logo-icon">📖</div>
+        <div>
+          <span class="logo-title">Biblioteca IPD</span>
+          <span class="logo-sub">Painel Administrativo</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="../index.html" class="nav-link">← Site</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <a class="sidebar-item active" onclick="mostrarSecao('dashboard')" href="#">
+        <span>📊</span> Dashboard
+      </a>
+      <a class="sidebar-item" onclick="mostrarSecao('solicitacoes')" href="#">
+        <span>📬</span> Solicitações
+      </a>
+      <a class="sidebar-item" onclick="mostrarSecao('emprestimos')" href="#">
+        <span>📋</span> Empréstimos
+      </a>
+      <a class="sidebar-item" onclick="mostrarSecao('acervo')" href="#">
+        <span>📚</span> Gerenciar Acervo
+      </a>
+      <a class="sidebar-item" onclick="mostrarSecao('cadastrar')" href="#">
+        <span>➕</span> Cadastrar Livro
+      </a>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-content">
+      <div id="alert-area"></div>
+
+      <!-- DASHBOARD -->
+      <div id="sec-dashboard">
+        <h2>Dashboard</h2>
+        <div class="stats-grid" id="statsGrid"></div>
+        <h3 class="section-title" style="margin-bottom:16px">⚠️ Empréstimos Atrasados</h3>
+        <div class="table-wrap" id="atrasadosTable"></div>
+      </div>
+
+      <!-- SOLICITAÇÕES -->
+      <div id="sec-solicitacoes" style="display:none">
+        <h2>Solicitações Pendentes</h2>
+        <div class="table-wrap" id="solicitacoesTable"></div>
+      </div>
+
+      <!-- EMPRÉSTIMOS -->
+      <div id="sec-emprestimos" style="display:none">
+        <h2>Empréstimos Ativos</h2>
+        <div class="table-wrap" id="emprestimosTable"></div>
+      </div>
+
+      <!-- ACERVO -->
+      <div id="sec-acervo" style="display:none">
+        <h2>Gerenciar Acervo</h2>
+        <div class="filter-bar" style="margin-bottom:20px">
+          <input type="text" id="acervoSearch" placeholder="Buscar por título..." oninput="renderAcervoAdmin()"/>
+        </div>
+        <div class="table-wrap" id="acervoTable"></div>
+      </div>
+
+      <!-- CADASTRAR -->
+      <div id="sec-cadastrar" style="display:none">
+        <h2 id="formTitle">Cadastrar Novo Livro</h2>
+        <div style="background:var(--white);padding:28px;border-radius:var(--radius);box-shadow:var(--shadow)">
+          <input type="hidden" id="editId"/>
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label>Título *</label>
+              <input type="text" id="fTitulo" placeholder="Título do livro"/>
+            </div>
+            <div class="form-group">
+              <label>Autor *</label>
+              <input type="text" id="fAutor" placeholder="Nome do autor"/>
+            </div>
+            <div class="form-group">
+              <label>Ano</label>
+              <input type="number" id="fAno" placeholder="Ex: 1994"/>
+            </div>
+            <div class="form-group">
+              <label>Categoria *</label>
+              <select id="fCat">
+                <option value="">Selecione...</option>
+                <option>Teologia Sistemática</option>
+                <option>História da Igreja</option>
+                <option>Apologética</option>
+                <option>Vida Cristã</option>
+                <option>Missões</option>
+                <option>Comentários Bíblicos</option>
+                <option>Biografias</option>
+                <option>Literatura Cristã</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Ícone (emoji)</label>
+              <input type="text" id="fIcone" placeholder="📚" maxlength="4"/>
+            </div>
+            <div class="form-group form-full">
+              <label>Resumo</label>
+              <textarea id="fResumo" placeholder="Breve descrição do livro..."></textarea>
+            </div>
+          </div>
+          <div style="margin-top:20px;display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="salvarLivro()">💾 Salvar Livro</button>
+            <button class="btn btn-outline" onclick="limparFormulario()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    // ============ NAVEGAÇÃO ============
+    const secoes = ['dashboard','solicitacoes','emprestimos','acervo','cadastrar'];
+    function mostrarSecao(id) {
+      secoes.forEach(s => {
+        document.getElementById(`sec-${s}`).style.display = s === id ? 'block' : 'none';
+      });
+      document.querySelectorAll('.sidebar-item').forEach((el, i) => {
+        el.classList.toggle('active', secoes[i] === id);
+      });
+      if (id === 'dashboard')    renderDashboard();
+      if (id === 'solicitacoes') renderSolicitacoes();
+      if (id === 'emprestimos')  renderEmprestimos();
+      if (id === 'acervo')       renderAcervoAdmin();
+    }
+
+    // ============ DASHBOARD ============
+    function renderDashboard() {
+      const s = getEstatisticas();
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${s.total}</div><div class="stat-label">Total de Livros</div></div>
+        <div class="stat-card"><div class="stat-value">${s.disponiveis}</div><div class="stat-label">Disponíveis</div></div>
+        <div class="stat-card"><div class="stat-value">${s.emprestados}</div><div class="stat-label">Emprestados</div></div>
+        <div class="stat-card red"><div class="stat-value">${s.atrasados}</div><div class="stat-label">⚠️ Atrasados</div></div>
+        <div class="stat-card amber"><div class="stat-value">${s.pendentes}</div><div class="stat-label">📬 Pendentes</div></div>
+      `;
+      const atrasados = getEmprestimos().filter(e => !e.devolvido && isAtrasado(e));
+      const aEl = document.getElementById('atrasadosTable');
+      if (!atrasados.length) {
+        aEl.innerHTML = '<p style="padding:16px;color:var(--gray-text)">Nenhum empréstimo atrasado. ✅</p>';
+        return;
+      }
+      aEl.innerHTML = `<table>
+        <thead><tr><th>Nome</th><th>Livro</th><th>Previsto</th><th>Ação</th></tr></thead>
+        <tbody>${atrasados.map(e => {
+          const liv = getLivro(e.livroId);
+          return `<tr style="background:#fef2f2">
+            <td>${e.nome}</td>
+            <td>${liv ? liv.titulo : '—'}</td>
+            <td style="color:var(--red)">${formatDate(e.dataDevolucao)}</td>
+            <td><button class="action-btn green" onclick="devolver(${e.id})">✓ Devolvido</button></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+
+    // ============ SOLICITAÇÕES ============
+    function renderSolicitacoes() {
+      const lista = getSolicitacoes().filter(s => s.status === 'pendente');
+      const el = document.getElementById('solicitacoesTable');
+      if (!lista.length) {
+        el.innerHTML = '<p style="padding:16px;color:var(--gray-text)">Nenhuma solicitação pendente.</p>';
+        return;
+      }
+      el.innerHTML = `<table>
+        <thead><tr><th>Data</th><th>Nome</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead>
+        <tbody>${lista.map(s => {
+          const liv = getLivro(s.livroId);
+          return `<tr>
+            <td>${formatDate(s.data)}</td>
+            <td>${s.nome}</td>
+            <td>${liv ? liv.titulo : '—'}</td>
+            <td>${s.tipoSolicitacao === 'fila' ? '⏳ Fila' : '📬 Empréstimo'}</td>
+            <td>
+              ${s.tipoSolicitacao !== 'fila' ? `<button class="action-btn green" onclick="aprovar(${s.id})">✓ Aprovar</button>` : ''}
+              <button class="action-btn red" onclick="rejeitar(${s.id})">✕ Rejeitar</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+
+    function aprovar(id) {
+      aprovarSolicitacao(id);
+      showAlert('✅ Solicitação aprovada e empréstimo registrado!', 'success');
+      renderSolicitacoes();
+    }
+    function rejeitar(id) {
+      rejeitarSolicitacao(id);
+      showAlert('Solicitação rejeitada.', 'warn');
+      renderSolicitacoes();
+    }
+
+    // ============ EMPRÉSTIMOS ============
+    function renderEmprestimos() {
+      const lista = getEmprestimos().filter(e => !e.devolvido);
+      const el = document.getElementById('emprestimosTable');
+      if (!lista.length) {
+        el.innerHTML = '<p style="padding:16px;color:var(--gray-text)">Nenhum empréstimo ativo.</p>';
+        return;
+      }
+      el.innerHTML = `<table>
+        <thead><tr><th>Nome</th><th>CPF</th><th>Livro</th><th>Emprestado</th><th>Previsto</th><th>Status</th><th>Ação</th></tr></thead>
+        <tbody>${lista.map(e => {
+          const liv = getLivro(e.livroId);
+          const atrasado = isAtrasado(e);
+          return `<tr>
+            <td>${e.nome}</td>
+            <td style="font-family:monospace;font-size:.82rem">${e.cpfMascarado}</td>
+            <td>${liv ? liv.titulo : '—'}</td>
+            <td>${formatDate(e.dataEmprestimo)}</td>
+            <td>${formatDate(e.dataDevolucao)}</td>
+            <td>${atrasado ? '<span style="color:var(--red);font-weight:600">⚠️ Atrasado</span>' : '<span style="color:#10b981;font-weight:600">✅ Em dia</span>'}</td>
+            <td><button class="action-btn green" onclick="devolver(${e.id})">✓ Devolvido</button></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+
+    function devolver(id) {
+      registrarDevolucao(id);
+      showAlert('📗 Devolução registrada com sucesso!', 'success');
+      renderEmprestimos();
+      renderDashboard();
+    }
+
+    // ============ ACERVO ADMIN ============
+    function renderAcervoAdmin() {
+      const q = (document.getElementById('acervoSearch')?.value || '').toLowerCase();
+      const lista = getLivros().filter(l => !q || l.titulo.toLowerCase().includes(q) || l.autor.toLowerCase().includes(q));
+      const el = document.getElementById('acervoTable');
+      el.innerHTML = `<table>
+        <thead><tr><th>Título</th><th>Autor</th><th>Categoria</th><th>Status</th><th>Empréstimos</th><th>Ações</th></tr></thead>
+        <tbody>${lista.map(l => `
+          <tr>
+            <td><strong>${l.titulo}</strong></td>
+            <td>${l.autor}</td>
+            <td>${l.categoria}</td>
+            <td>${l.status === 'disponivel' ? '🟢 Disponível' : '🔴 Emprestado'}</td>
+            <td style="text-align:center">${l.emprestimos}</td>
+            <td>
+              <button class="action-btn amber" onclick="editarLivro(${l.id})">✎ Editar</button>
+              <button class="action-btn red" onclick="excluirLivro(${l.id})">🗑 Excluir</button>
+            </td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+    }
+
+    function editarLivro(id) {
+      const l = getLivro(id);
+      if (!l) return;
+      document.getElementById('editId').value = l.id;
+      document.getElementById('fTitulo').value = l.titulo;
+      document.getElementById('fAutor').value = l.autor;
+      document.getElementById('fAno').value = l.ano || '';
+      document.getElementById('fCat').value = l.categoria;
+      document.getElementById('fIcone').value = l.icone || '';
+      document.getElementById('fResumo').value = l.resumo || '';
+      document.getElementById('formTitle').textContent = 'Editar Livro';
+      mostrarSecao('cadastrar');
+    }
+
+    function excluirLivro(id) {
+      if (!confirm('Tem certeza que deseja excluir este livro?')) return;
+      deleteLivro(id);
+      showAlert('Livro excluído.', 'warn');
+      renderAcervoAdmin();
+    }
+
+    // ============ FORM LIVRO ============
+    function salvarLivro() {
+      const id = document.getElementById('editId').value;
+      const titulo = document.getElementById('fTitulo').value.trim();
+      const autor  = document.getElementById('fAutor').value.trim();
+      const cat    = document.getElementById('fCat').value;
+      if (!titulo || !autor || !cat) { showAlert('Preencha os campos obrigatórios (*).', 'error'); return; }
+
+      const dados = {
+        titulo, autor, categoria: cat,
+        ano:    document.getElementById('fAno').value || null,
+        icone:  document.getElementById('fIcone').value || '📚',
+        resumo: document.getElementById('fResumo').value.trim(),
+      };
+
+      if (id) {
+        updateLivro(id, dados);
+        showAlert('✅ Livro atualizado com sucesso!', 'success');
+      } else {
+        addLivro(dados);
+        showAlert('✅ Livro cadastrado com sucesso!', 'success');
+      }
+      limparFormulario();
+    }
+
+    function limparFormulario() {
+      ['editId','fTitulo','fAutor','fAno','fIcone','fResumo'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('fCat').value = '';
+      document.getElementById('formTitle').textContent = 'Cadastrar Novo Livro';
+    }
+
+    // Init
+    renderDashboard();
+  </script>
+</body>
+</html>

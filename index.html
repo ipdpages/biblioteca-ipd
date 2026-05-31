@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biblioteca IPD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container header-inner">
+      <div class="logo-area">
+        <div class="logo-icon">📖</div>
+        <div>
+          <span class="logo-title">Biblioteca IPD</span>
+          <span class="logo-sub">Igreja Presbiteriana</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="index.html" class="nav-link active">Início</a>
+        <a href="pages/acervo.html" class="nav-link">Acervo</a>
+        <a href="pages/admin.html" class="nav-link nav-admin">Painel Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO / CITAÇÃO -->
+  <section class="hero">
+    <div class="container">
+      <p class="hero-quote" id="quoteText">"O temor do Senhor é o princípio do saber."</p>
+      <p class="hero-ref" id="quoteRef">— Provérbios 1:7</p>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Pesquisar por título, autor ou categoria..." />
+        <button onclick="buscar()">🔍 Buscar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOVOS NO ACERVO -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Novos no Acervo</h2>
+      <div class="books-grid" id="novosLivros"></div>
+    </div>
+  </section>
+
+  <!-- MAIS PROCURADOS -->
+  <section class="section section-alt">
+    <div class="container">
+      <h2 class="section-title">Mais Procurados</h2>
+      <div class="books-grid" id="maisProcurados"></div>
+    </div>
+  </section>
+
+  <!-- CATEGORIAS -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Explorar por Categoria</h2>
+      <div class="categories-grid">
+        <a href="pages/acervo.html?cat=Teologia Sistemática" class="category-chip">📚 Teologia Sistemática</a>
+        <a href="pages/acervo.html?cat=História da Igreja" class="category-chip">⛪ História da Igreja</a>
+        <a href="pages/acervo.html?cat=Apologética" class="category-chip">🛡️ Apologética</a>
+        <a href="pages/acervo.html?cat=Vida Cristã" class="category-chip">✝️ Vida Cristã</a>
+        <a href="pages/acervo.html?cat=Missões" class="category-chip">🌍 Missões</a>
+        <a href="pages/acervo.html?cat=Comentários Bíblicos" class="category-chip">📖 Comentários Bíblicos</a>
+        <a href="pages/acervo.html?cat=Biografias" class="category-chip">👤 Biografias</a>
+        <a href="pages/acervo.html?cat=Literatura Cristã" class="category-chip">📝 Literatura Cristã</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>© 2025 Biblioteca IPD · Todos os dados são utilizados exclusivamente para controle de empréstimos.</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Citações rotativas
+    const quotes = [
+      { text: "O temor do Senhor é o princípio do saber.", ref: "— Provérbios 1:7" },
+      { text: "Procura apresentar-te a Deus aprovado.", ref: "— 2 Timóteo 2:15" },
+      { text: "A lâmpada dos meus pés é a tua palavra.", ref: "— Salmos 119:105" },
+      { text: "Sede transformados pela renovação do vosso entendimento.", ref: "— Romanos 12:2" },
+    ];
+    const q = quotes[Math.floor(Math.random() * quotes.length)];
+    document.getElementById('quoteText').textContent = `"${q.text}"`;
+    document.getElementById('quoteRef').textContent = q.ref;
+
+    function buscar() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (q) window.location.href = `pages/acervo.html?q=${encodeURIComponent(q)}`;
+    }
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') buscar();
+    });
+
+    // Renderizar seções
+    renderBookGrid('novosLivros', getNewBooks());
+    renderBookGrid('maisProcurados', getPopularBooks());
+  </script>
+</body>
+</html>
