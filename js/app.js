@@ -1,14 +1,22 @@
 // ============================================================
-//  app.js – Helpers de UI compartilhados
+//  app.js – Helpers de UI
 // ============================================================
 
 function statusBadge(status) {
-  const map = {
-    disponivel: '<span class="book-badge badge-available">🟢 Disponível</span>',
-    emprestado:  '<span class="book-badge badge-borrowed">🔴 Emprestado</span>',
-    reservado:   '<span class="book-badge badge-reserved">🟡 Reservado</span>',
-  };
-  return map[status] || '';
+  return status === 'disponivel'
+    ? '<span class="book-badge badge-available">Disponível</span>'
+    : '<span class="book-badge badge-borrowed">Emprestado</span>';
+}
+
+function bookCoverHtml(livro, height) {
+  const url = driveUrl(livro.foto);
+  if (url) return `<img src="${url}" alt="Capa de ${livro.titulo}" loading="lazy" onerror="this.parentElement.innerHTML=placeholderHtml('${livro.titulo}')"/>`;
+  return placeholderHtml(livro.titulo);
+}
+
+function placeholderHtml(titulo) {
+  const inicial = (titulo || '?').charAt(0).toUpperCase();
+  return `<div class="book-cover-placeholder"><span>${inicial}</span></div>`;
 }
 
 function renderBookGrid(containerId, livros) {
@@ -20,7 +28,7 @@ function renderBookGrid(containerId, livros) {
   }
   el.innerHTML = livros.map(l => `
     <div class="book-card" onclick="abrirLivro(${l.id})">
-      <div class="book-cover">${l.icone || '📚'}</div>
+      <div class="book-cover">${bookCoverHtml(l)}</div>
       <div class="book-info">
         <div class="book-title">${l.titulo}</div>
         <div class="book-author">${l.autor}</div>
@@ -35,7 +43,6 @@ function abrirLivro(id) {
 }
 
 function getBasePath() {
-  // Detecta se estamos em /pages/ ou na raiz
   return window.location.pathname.includes('/pages/') ? '../' : '';
 }
 
@@ -48,6 +55,27 @@ function showAlert(msg, tipo = 'success', containerId = 'alert-area') {
 
 function formatDate(str) {
   if (!str) return '—';
-  const [y, m, d] = str.split('-');
+  const [y,m,d] = str.split('-');
   return `${d}/${m}/${y}`;
+}
+
+// Preenche um <select> com os assuntos
+function popularSelectAssuntos(selectId, valorAtual) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const lista = getAssuntos();
+  sel.innerHTML = '<option value="">Selecione o assunto...</option>' +
+    lista.map(a => `<option value="${a}" ${a===valorAtual?'selected':''}>${a}</option>`).join('') +
+    '<option value="__novo__">+ Cadastrar novo assunto...</option>';
+  sel.addEventListener('change', () => {
+    if (sel.value === '__novo__') {
+      const novo = prompt('Digite o novo assunto:');
+      if (novo && novo.trim()) {
+        addAssuntoCustom(novo.trim());
+        popularSelectAssuntos(selectId, novo.trim().toUpperCase());
+      } else {
+        sel.value = valorAtual || '';
+      }
+    }
+  });
 }
