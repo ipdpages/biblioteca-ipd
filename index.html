@@ -484,7 +484,13 @@ function _chk(s){try{const d=atob(_SK).split(',').map(Number);return s===d.map((
 
 let LIVROS=[],livroAtual=null,vistaAnt='inicio',assuntosLista=[],_CACHE={};
 
-async function apiGet(acao,params=''){const r=await fetch(`${API}?acao=${acao}${params}`);return r.json();}
+async function apiGet(acao,params=''){
+  try{
+    const r=await fetch(`${API}?acao=${acao}${params}`);
+    const d=await r.json();
+    return Array.isArray(d)?d:(d&&d.erro?[]:d);
+  }catch(e){console.error('apiGet error',acao,e);return [];}
+}
 async function apiPost(body){const r=await fetch(API,{method:'POST',body:JSON.stringify(body)});return r.json();}
 
 // VERSÍCULOS
@@ -545,8 +551,7 @@ async function carregarDados(){
   assuntosLista=getAssuntosFromLivros();
   renderInicio();
   // warm cache
-  Promise.all([apiGet('emprestimos'),apiGet('solicitacoes')]).then(([e,s])=>{_CACHE.emps=e;_CACHE.sols=s;});
-  Promise.all([apiGet('emprestimos'),apiGet('solicitacoes')]).then(([e,s])=>{_CACHE.emps=e;_CACHE.sols=s;});
+  Promise.all([apiGet('emprestimos'),apiGet('solicitacoes')]).then(([e,s])=>{_CACHE.emps=Array.isArray(e)?e:[];_CACHE.sols=Array.isArray(s)?s:[];});
   const sel=document.getElementById('f-ass');
   while(sel.options.length>1)sel.remove(1);
   assuntosLista.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o);});
@@ -692,7 +697,9 @@ function secAdm(id){
 
 // DASHBOARD
 async function renderDash(){
-  const[emps,sols]=await Promise.all([_CACHE.emps?Promise.resolve(_CACHE.emps):apiGet('emprestimos'),_CACHE.sols?Promise.resolve(_CACHE.sols):apiGet('solicitacoes')]);_CACHE.emps=emps;_CACHE.sols=sols;
+  const[_re,_rs]=await Promise.all([Array.isArray(_CACHE.emps)?Promise.resolve(_CACHE.emps):apiGet('emprestimos'),Array.isArray(_CACHE.sols)?Promise.resolve(_CACHE.sols):apiGet('solicitacoes')]);
+  const emps=Array.isArray(_re)?_re:[];const sols=Array.isArray(_rs)?_rs:[];
+  _CACHE.emps=emps;_CACHE.sols=sols;
   const ativos=emps.filter(e=>String(e.DEVOLVIDO||'')!='SIM');
   const atrs=ativos.filter(atrasado);
   const pend=sols.filter(s=>s.STATUS==='PENDENTE');
@@ -708,22 +715,26 @@ async function renderDash(){
 }
 
 // SOLICITAÇÕES
-async function renderSols(){
+async function renderSols(){try{
   document.getElementById('tw-sol').innerHTML='<p class="empty">Carregando...</p>';
-  const sols=_CACHE.sols||await apiGet('solicitacoes');_CACHE.sols=sols;
-  const pend=sols.filter(s=>s.STATUS==='PENDENTE');
+  let sols=_CACHE.sols;
+  if(!Array.isArray(sols)){sols=await apiGet('solicitacoes');}
+  _CACHE.sols=Array.isArray(sols)?sols:[];
+  const pend=_CACHE.sols.filter(s=>s.STATUS==='PENDENTE');
   const tw=document.getElementById('tw-sol');
   if(!pend.length){tw.innerHTML='<p class="empty">Nenhuma solicitação pendente.</p>';return;}
   tw.innerHTML=`<table><thead><tr><th>Data</th><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead><tbody>${pend.map(s=>`<tr><td>${fmtDate(s.DATA)}</td><td>${s.NOME}</td><td><a href="https://wa.me/55${(s.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${s.WHATSAPP}</a></td><td>${s.TITULO||''}</td><td>${s.TIPO==='fila'?'Fila':'Empréstimo'}</td><td>${s.TIPO!=='fila'?`<button class="ab ab-v" onclick="aprovarSol(${s.ID})">Aprovar</button>`:''} <button class="ab ab-r" onclick="rejeitarSol(${s.ID})">Rejeitar</button></td></tr>`).join('')}</tbody></table>`;
-}
-async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');_CACHE.sols=null;_CACHE.emps=null;al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
+}catch(err){document.getElementById('tw-sol').innerHTML='<p class="empty">Erro ao carregar solicitações.</p>';console.error('renderSols error:',err);}
+}async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');_CACHE.sols=null;_CACHE.emps=null;al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
 async function rejeitarSol(id){await apiPost({acao:'rejeitarSol',id});_CACHE.sols=null;al('Rejeitado.','av','al-adm');renderSols();}
 
 // EMPRÉSTIMOS
 async function renderEmps(){
   document.getElementById('tw-emp').innerHTML='<p class="empty">Carregando...</p>';
-  const emps=_CACHE.emps||await apiGet('emprestimos');_CACHE.emps=emps;
-  const ativos=emps.filter(e=>String(e.DEVOLVIDO||'')!='SIM');
+  let emps=_CACHE.emps;
+  if(!Array.isArray(emps)){emps=await apiGet('emprestimos');}
+  _CACHE.emps=Array.isArray(emps)?emps:[];
+  const ativos=_CACHE.emps.filter(e=>String(e.DEVOLVIDO||'')!='SIM');
   const tw=document.getElementById('tw-emp');
   if(!ativos.length){tw.innerHTML='<p class="empty">Nenhum empréstimo ativo.</p>';return;}
   tw.innerHTML=`<table><thead><tr><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Emprestado</th><th>Previsto</th><th>Status</th><th>Ação</th></tr></thead><tbody>${ativos.map(e=>`<tr><td>${e.NOME}</td><td><a href="https://wa.me/55${(e.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${e.WHATSAPP}</a></td><td>${e.TITULO||''}</td><td>${fmtDate(e.DATA_EMP)}</td><td>${fmtDate(e.DATA_DEV)}</td><td>${atrasado(e)?'<span style="color:var(--red);font-weight:500">Atrasado</span>':'<span style="color:#10b981;font-weight:500">Em dia</span>'}</td><td><button class="ab ab-v" onclick="devolverAdm(${e.ID})">Devolvido</button></td></tr>`).join('')}</tbody></table>`;
