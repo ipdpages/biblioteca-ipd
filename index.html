@@ -528,7 +528,11 @@ function irVista(id,filtro){
   const mapa={inicio:0,acervo:1};
   if(mapa[id]!==undefined)document.querySelectorAll('.nav-btn')[mapa[id]]?.classList.add('on');
   window.scrollTo(0,0);
-  if(id==='inicio')renderInicio();
+  // Limpa busca ao voltar para início
+  if(id==='inicio'){
+    document.getElementById('busca-inp').value='';
+    renderInicio();
+  }
   if(id==='acervo')renderAcervoPage(filtro);
 }
 function abrirLivro(id){livroAtual=id;vistaAnt=document.querySelector('.vista.on')?.id.replace('v-','')||'inicio';irVista('livro');renderLivro(id);}
