@@ -715,17 +715,36 @@ async function renderDash(){
 }
 
 // SOLICITAÇÕES
-async function renderSols(){try{
+async function renderSols(){
   document.getElementById('tw-sol').innerHTML='<p class="empty">Carregando...</p>';
-  let sols=_CACHE.sols;
-  if(!Array.isArray(sols)){sols=await apiGet('solicitacoes');}
-  _CACHE.sols=Array.isArray(sols)?sols:[];
-  const pend=_CACHE.sols.filter(s=>String(s.STATUS||'').trim()==='PENDENTE');
-  const tw=document.getElementById('tw-sol');
-  if(!pend.length){tw.innerHTML='<p class="empty">Nenhuma solicitação pendente.</p>';return;}
-  tw.innerHTML=`<table><thead><tr><th>Data</th><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead><tbody>${pend.map(s=>`<tr><td>${fmtDate(s.DATA)}</td><td>${s.NOME}</td><td><a href="https://wa.me/55${String(s.WHATSAPP||'').replace(/\D/g,'')}" target="_blank" style="color:var(--verde)">${s.WHATSAPP}</a></td><td>${s.TITULO||''}</td><td>${s.TIPO==='fila'?'Fila':'Empréstimo'}</td><td>${s.TIPO!=='fila'?`<button class="ab ab-v" onclick="aprovarSol(${s.ID})">Aprovar</button>`:''} <button class="ab ab-r" onclick="rejeitarSol(${s.ID})">Rejeitar</button></td></tr>`).join('')}</tbody></table>`;
-}catch(err){document.getElementById('tw-sol').innerHTML='<p class="empty">Erro ao carregar solicitações.</p>';console.error('renderSols error:',err);}
-}async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');_CACHE.sols=null;_CACHE.emps=null;al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
+  try{
+    let sols=_CACHE.sols;
+    if(!Array.isArray(sols)){sols=await apiGet('solicitacoes');}
+    _CACHE.sols=Array.isArray(sols)?sols:[];
+    const pend=_CACHE.sols.filter(s=>String(s.STATUS||'').trim()==='PENDENTE');
+    const tw=document.getElementById('tw-sol');
+    if(!pend.length){tw.innerHTML='<p class="empty">Nenhuma solicitação pendente.</p>';return;}
+    const linhas=pend.map(s=>{
+      const wpp=String(s.WHATSAPP||'').replace(/\D/g,'');
+      const tipo=String(s.TIPO||'')==='fila'?'Fila':'Empréstimo';
+      const btAprovar=String(s.TIPO||'')!=='fila'?'<button class="ab ab-v" onclick="aprovarSol('+s.ID+')">Aprovar</button>':'';
+      const btRejeitar='<button class="ab ab-r" onclick="rejeitarSol('+s.ID+')">Rejeitar</button>';
+      return '<tr>'
+        +'<td>'+fmtDate(s.DATA)+'</td>'
+        +'<td>'+(s.NOME||'')+'</td>'
+        +'<td><a href="https://wa.me/55'+wpp+'" target="_blank" style="color:var(--verde)">'+(s.WHATSAPP||'')+'</a></td>'
+        +'<td>'+(s.TITULO||'')+'</td>'
+        +'<td>'+tipo+'</td>'
+        +'<td>'+btAprovar+' '+btRejeitar+'</td>'
+        +'</tr>';
+    });
+    tw.innerHTML='<table><thead><tr><th>Data</th><th>Nome</th><th>WhatsApp</th><th>Livro</th><th>Tipo</th><th>Ações</th></tr></thead><tbody>'+linhas.join('')+'</tbody></table>';
+  }catch(err){
+    document.getElementById('tw-sol').innerHTML='<p class="empty">Erro ao carregar. Tente novamente.</p>';
+    console.error('renderSols error:',err);
+  }
+}
+async function aprovarSol(id){await apiPost({acao:'aprovarSol',id});LIVROS=await apiGet('livros');_CACHE.sols=null;_CACHE.emps=null;al('Aprovado e empréstimo registrado.','ok','al-adm');renderSols();renderDash();}
 async function rejeitarSol(id){await apiPost({acao:'rejeitarSol',id});_CACHE.sols=null;al('Rejeitado.','av','al-adm');renderSols();}
 
 // EMPRÉSTIMOS
