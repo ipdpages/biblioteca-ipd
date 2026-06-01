@@ -255,7 +255,7 @@ footer{background:var(--verde-esc);color:rgba(255,255,255,.4);text-align:center;
       <p class="hero-q" id="citacao-txt"></p>
       <p class="hero-ref" id="citacao-ref"></p>
       <div class="busca-wrap">
-        <input type="text" id="busca-inp" placeholder="Pesquisar título, autor ou assunto..." autocomplete="off"/>
+        <input type="text" id="busca-inp" placeholder="Pesquisar título, autor ou assunto..." autocomplete="new-password" name="search-biblioteca" readonly onfocus="this.removeAttribute('readonly')"/>
         <button onclick="buscar()">Buscar</button>
       </div>
     </div>
@@ -401,7 +401,7 @@ footer{background:var(--verde-esc);color:rgba(255,255,255,.4);text-align:center;
     <h2>Painel Administrativo</h2>
     <p>Biblioteca IPD · Igreja Presbiteriana de Diadema</p>
     <div class="login-err" id="login-err">Senha incorreta.</div>
-    <input type="password" id="senha-inp" placeholder="••••••" onkeydown="if(event.key==='Enter')entrar()"/>
+    <input type="password" id="senha-inp" placeholder="••••••" autocomplete="new-password" name="adm-pass-biblioteca" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')entrar()"/>
     <button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="entrar()">Entrar</button>
     <button class="btn btn-o" style="width:100%" onclick="fecharLogin()">Cancelar</button>
   </div>
