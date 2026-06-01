@@ -255,7 +255,7 @@ footer{background:var(--verde-esc);color:rgba(255,255,255,.4);text-align:center;
       <p class="hero-q" id="citacao-txt"></p>
       <p class="hero-ref" id="citacao-ref"></p>
       <div class="busca-wrap">
-        <input type="text" id="busca-inp" placeholder="Pesquisar título, autor ou assunto..."/>
+        <input type="text" id="busca-inp" placeholder="Pesquisar título, autor ou assunto..." autocomplete="off"/>
         <button onclick="buscar()">Buscar</button>
       </div>
     </div>
@@ -562,6 +562,7 @@ function buscar(){const q=document.getElementById('busca-inp').value.trim();if(q
 document.addEventListener('DOMContentLoaded',()=>{
   mostrarCit();
   setInterval(()=>{citIdx++;mostrarCit();},8000);
+  document.getElementById('busca-inp').value='';
   carregarDados();
   if(sessionStorage.getItem('ipd_ok')==='1')document.getElementById('sc-adm').classList.add('on');
   document.getElementById('busca-inp').addEventListener('keydown',e=>{if(e.key==='Enter')buscar();});
