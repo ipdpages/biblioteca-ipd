@@ -875,7 +875,7 @@ function abrirDetalheEmp(id){
     +'<div class="detail-item"><span class="detail-label">Previsto</span><span class="detail-val" style="color:'+(at?'var(--err-l)':'var(--txt)')+'">'+fmtDate(e.DATA_DEV)+(at?' Atrasado':'')+'</span></div>'
     +(l?'<div class="detail-item"><span class="detail-label">Status do livro</span><span class="detail-val">'+(l.status||'')+'</span></div>':'')
     +'</div>'
-    +'<div class="detail-actions"><button class="btn btn-p" onclick="devolverAdm('+e.ID+');fecharM('m-detail')">Marcar Devolvido</button></div>';
+    +'<div class="detail-actions"><button class="btn btn-p" onclick="devolverAdm('+e.ID+');fecharM(&quot;m-detail&quot;)">Marcar Devolvido</button></div>';
   abrirM('m-detail');
 }
 
@@ -886,8 +886,8 @@ function abrirDetalheSol(id){
   var wpp=String(s.WHATSAPP||'').replace(/[^0-9]/g,'');
   var acoes=s.STATUS==='PENDENTE'
     ?'<div class="detail-actions">'
-      +(s.TIPO!=='fila'?'<button class="btn btn-p" style="margin-right:8px" onclick="aprovarSol('+s.ID+');fecharM('m-detail')">Aprovar</button>':'')
-      +'<button class="btn btn-o" onclick="rejeitarSol('+s.ID+');fecharM('m-detail')">Rejeitar</button></div>'
+      +(s.TIPO!=='fila'?'<button class="btn btn-p" style="margin-right:8px" onclick="aprovarSol('+s.ID+');fecharM(&quot;m-detail&quot;)">Aprovar</button>':'')
+      +'<button class="btn btn-o" onclick="rejeitarSol('+s.ID+');fecharM(&quot;m-detail&quot;)">Rejeitar</button></div>'
     :'<p style="font-size:.82rem;color:var(--txt2);margin-top:10px">Status: '+String(s.STATUS||'')+'</p>';
   document.getElementById('detail-title').textContent=s.NOME||'';
   document.getElementById('detail-body').innerHTML=
@@ -918,8 +918,8 @@ function abrirDetalheLivroAdm(id){
     +(asts.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;margin:10px 0">'+asts.map(function(a){return '<span class="assunto-tag">'+a+'</span>';}).join('')+'</div>':'')
     +(l.resumo?'<p style="font-size:.84rem;color:var(--txt2);line-height:1.7;margin-top:8px">'+l.resumo+'</p>':'')
     +'<div class="detail-actions">'
-    +'<button class="ab ab-a" style="margin-right:8px" onclick="fecharM('m-detail');abrirEditLivro(''+sid+'')">Editar</button>'
-    +'<button class="ab ab-r" onclick="fecharM('m-detail');confirmarExcluirLivro(''+sid+'')">Excluir</button>'
+    +'<button class="ab ab-a" style="margin-right:8px" onclick="fecharM(&quot;m-detail&quot;);abrirEditLivro(&quot;'+sid+'&quot;)">Editar</button>'
+    +'<button class="ab ab-r" onclick="fecharM(&quot;m-detail&quot;);confirmarExcluirLivro(&quot;'+sid+'&quot;)">Excluir</button>'
     +'</div>';
   abrirM('m-detail');
 }
@@ -1002,9 +1002,7 @@ async function salvarEdicao(){
   const titulo=document.getElementById('ed-tit').value.trim();
   const autor=document.getElementById('ed-aut').value.trim();
   const assuntos=document.getElementById('ed-ass').value.trim();
-  if(!titulo||!autor||!assuntos){al('Preencha os campos obrigatórios.','err','al-adm');return;}
-  const btn=document.querySelector('#m-edit-livro .btn-p');
-  if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+  if(!titulo||!autor||!assuntos){al('Preencha os campos obrigat\u00f3rios.','err','al-adm');return;}
   try{
     const dados={titulo,subtitulo:document.getElementById('ed-sub').value.trim(),autor,edicao:document.getElementById('ed-edi').value.trim(),editora:document.getElementById('ed-edt').value.trim(),local:document.getElementById('ed-loc').value.trim(),ano:document.getElementById('ed-ano').value,paginas:document.getElementById('ed-pag').value,isbn:document.getElementById('ed-isbn').value.trim(),material:document.getElementById('ed-mat').value,assuntos,capa:document.getElementById('ed-cap').value.trim(),resumo:document.getElementById('ed-res').value.trim()};
     await apiPost({acao:'updateLivro',id,dados});
@@ -1186,10 +1184,10 @@ function enviarCalvin(){
 
 function calvinBookCard(l){
   var u=driveUrl(l.capa||l.foto||'');
-  var thumb=u?'<img src="'+u+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'" loading="lazy"/>':'<span style="font-family:var(--serif);font-size:1.1rem;color:var(--grn);opacity:.4">'+(l.titulo||'?').charAt(0)+'</span>';
+  var thumb=u?'<img src="'+u+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'" loading="lazy"/>':'<span style="font-family:var(--serif);font-size:1.1rem;color:var(--grn);opacity:.4">'+(l.titulo||'?').charAt(0)+'</span>';
   var st=l.status==='disponivel'?'<span style="color:#4a9e6a">Disponivel</span>':'<span style="color:var(--err-l)">Emprestado</span>';
   var id=String(l.id||l.ID);
-  return '<div class="calvin-book-card" onclick="irVista('acervo');setTimeout(function(){abrirLivro(''+id+'');},300);toggleCalvin()">'
+  return '<div class="calvin-book-card" onclick="irVista(&quot;acervo&quot;);setTimeout(function(){abrirLivro(&quot;'+id+'&quot;);},300);toggleCalvin()">'
     +'<div class="calvin-book-thumb">'+thumb+'</div>'
     +'<div class="calvin-book-info">'
     +'<div class="calvin-book-title">'+(l.titulo||'')+'</div>'
